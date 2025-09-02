@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>aditi vadmal — smart to‑do</title>
+  <style>
+    :root{
+      --bg:#fff0f6; --text:#3a2e32; --muted:#7a6167; --card:#ffffff; --line:#f5c2d3;
+      --accent:#ec4899; --accent-dark:#db2777; --soft:#ffe6ef;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font:16px/1.5 'Segoe UI',Roboto,Ubuntu,sans-serif;
+      background:linear-gradient(160deg,#fff0f6 0%,#ffe6ef 100%);
+      color:var(--text);
+    }
+    .wrap{max-width:980px; margin:36px auto; padding:0 16px}
+    header{display:flex; align-items:center; justify-content:space-between; margin-bottom:16px}
+    .brand{display:flex; align-items:center; gap:12px}
+    .monogram{
+      width:44px; height:44px; border-radius:50%;
+      display:grid; place-items:center; font-weight:800; letter-spacing:.5px;
+      color:white; background:linear-gradient(135deg,var(--accent),var(--accent-dark));
+      box-shadow:0 4px 12px rgba(236,72,153,.35);
+      text-transform:lowercase;
+    }
+    header h1{font-size:22px; margin:0; font-weight:800; letter-spacing:.5px; color:var(--accent-dark); text-transform:lowercase}
+    .sub{font-size:13px; color:var(--muted); margin-top:2px}
+    .row{display:flex; gap:10px}
+    .grid{display:grid; grid-template-columns: 1.2fr .8fr; gap:16px}
+    .card{
+      background:var(--card); border:2px solid var(--line); border-radius:16px; padding:18px;
+      box-shadow:0 6px 16px rgba(236,72,153,.18);
+    }
+    input[type="text"], textarea{
+      width:100%; padding:12px 14px; border:2px solid var(--line); border-radius:12px; font-size:15px; outline:none;
+      transition:.2s ease; background:#fff9fb;
+    }
+    textarea{min-height:120px; resize:vertical}
+    input[type="text"]:focus, textarea:focus{border-color:var(--accent)}
+    button{
+      border:2px solid var(--line); background:#fff0f6; padding:10px 16px; border-radius:12px; cursor:pointer;
+      font-weight:600; transition:.2s ease;
+    }
+    button:hover{background:var(--soft)}
+    button.primary{background:var(--accent); color:#fff; border-color:var(--accent-dark)}
+    button.primary:hover{background:var(--accent-dark)}
+    .toolbar{display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; align-items:center}
+    .toolbar button{padding:8px 12px; font-size:14px}
+    .toolbar .active{border-color:var(--accent); color:var(--accent-dark); background:#ffe6ef}
+    .stats{display:flex; align-items:center; gap:12px; margin-left:auto; font-size:13px; color:var(--muted)}
+    .badge{display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; border:1.5px solid var(--line); background:#fff9fb}
+    .badge.strong{border-color:var(--accent); color:var(--accent-dark); background:#ffe6ef}
+    ul{list-style:none; margin:14px 0 0; padding:0}
+    li.task{
+      display:grid; grid-template-columns: 22px 1fr auto; align-items:center; gap:10px;
+      padding:10px; border-bottom:1px dashed var(--line);
+    }
+    li.task:last-child{border-bottom:none}
+    li.task .title{font-weight:500}
+    li.task.done .title{text-decoration:line-through; color:var(--muted)}
+    .muted{color:var(--muted); font-size:13px}
+    .right{display:flex; gap:6px}
+    .right button{background:#fff9fb; font-size:13px}
+    .tiny{font-size:12px}
+    a.link{color:var(--accent); text-decoration:none}
+    .footer{display:flex; justify-content:space-between; align-items:center; margin-top:14px; font-size:13px; color:var(--muted)}
+    .empty{padding:16px; color:var(--muted); text-align:center; font-style:italic}
+    .hr{height:1px; background:var(--line); margin:12px 0}
+
+    /* Helper corner */
+    .helper-header{display:flex; align-items:center; gap:10px}
+    .helper-dot{width:10px; height:10px; border-radius:50%; background:var(--accent)}
+    .helper-sub{font-size:12px; color:var(--muted); margin-top:2px}
+    .helper-actions{display:flex; gap:8px; flex-wrap:wrap; margin-top:8px}
+    .pill{border-radius:999px; padding:8px 12px}
+    #assistOut{border-left:3px solid var(--line); padding-left:10px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <div class="monogram">av</div>
+        <div>
+          <h1>aditi vadmal — smart to‑do</h1>
+          <div class="sub">organized, fast, consistent</div>
+        </div>
+      </div>
+      <div class="badge strong">streak: <span id="streak">0</span> days</div>
+    </header>
+
+    <div class="grid">
+      <!-- Left: To-Do Core -->
+      <div>
+        <div class="card">
+          <div class="row">
+            <input id="input" type="text" placeholder="Add a task (e.g., 'Email resume by Friday 5pm !!')"/>
+            <button id="add" class="primary">Add</button>
+          </div>
+          <div class="toolbar">
+            <button data-filter="all" class="active">All</button>
+            <button data-filter="active">Active</button>
+            <button data-filter="done">Completed</button>
+            <div class="stats">
+              <div class="badge">Total: <span id="count">0</span></div>
+              <div class="badge">Left: <span id="left">0</span></div>
+              <a id="export" class="tiny link" href="#" style="margin-left:6px">Export JSON</a>
+              <a id="imgExport" class="tiny link" href="#" style="margin-left:6px">Export Summary</a>
+            </div>
+          </div>
+          <ul id="list"></ul>
+          <div id="empty" class="empty" style="display:none">No tasks yet 💖</div>
+          <div class="hr"></div>
+          <div class="footer">
+            <div>© built by aditi vadmal • local‑first</div>
+            <button id="clear" title="Remove completed tasks">Clear completed</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Helper Corner (no AI wording, no settings) -->
+      <div>
+        <div class="card">
+          <div class="helper-header">
+            <div class="helper-dot"></div>
+            <div>
+              <strong>Helper corner</strong>
+              <div class="helper-sub">Paste goals or a rough plan — get simple, human-friendly suggestions.</div>
+            </div>
+          </div>
+          <textarea id="context" placeholder="e.g., 'Interview next week. Need to polish portfolio, draft LinkedIn post, and send 3 applications.'"></textarea>
+          <div class="helper-actions">
+            <button id="btnSuggest" class="pill">Brainstorm tasks</button>
+            <button id="btnPlan" class="pill">Rough day plan</button>
+            <button id="btnSummarize" class="pill">Progress check</button>
+            <button id="btnMotivate" class="pill">Pep talk</button>
+            <button id="btnClean" class="pill">Tidy & sort</button>
+          </div>
+          <div id="assistOut" class="hint" style="margin-top:10px"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const $ = (s, root=document)=>root.querySelector(s);
+    const $$ = (s, root=document)=>Array.from(root.querySelectorAll(s));
+
+    // --- Elements
+    const listEl = $('#list'), input = $('#input'), addBtn = $('#add');
+    const exportLink = $('#export'), imgExport = $('#imgExport'), clearBtn = $('#clear');
+    const empty = $('#empty'), count = $('#count'), left = $('#left');
+    const toolbar = document.querySelector('.toolbar'), streakEl = $('#streak');
+    const ctxBox = $('#context'), assistOut = $('#assistOut');
+    const btnSuggest = $('#btnSuggest'), btnPlan = $('#btnPlan'), btnSummarize = $('#btnSummarize'), btnMotivate = $('#btnMotivate'), btnClean = $('#btnClean');
+
+    // --- State
+    let state = { items: [], filter: 'all' };
+
+    // --- Storage
+    function save(){ localStorage.setItem('aditi_todo_items', JSON.stringify(state.items)); }
+    function load(){
+      try { state.items = JSON.parse(localStorage.getItem('aditi_todo_items') || '[]'); }
+      catch(e){ state.items = []; }
+    }
+    function uid(){ return Math.random().toString(36).slice(2, 9); }
+    function todayStr(d=new Date()){ return d.toISOString().slice(0,10); }
+
+    // --- Streak tracking
+    function getDoneDates(){
+      try { return JSON.parse(localStorage.getItem('aditi_done_dates') || '[]'); }
+      catch(e){ return []; }
+    }
+    function setDoneDates(arr){ localStorage.setItem('aditi_done_dates', JSON.stringify(arr)); }
+    function addDoneToday(){
+      const ds = new Set(getDoneDates());
+      ds.add(todayStr());
+      setDoneDates([...ds]);
+    }
+    function calcStreak(){
+      const ds = new Set(getDoneDates());
+      let streak = 0;
+      const dayMs = 24*60*60*1000;
+      let cur = new Date();
+      while(true){
+        const key = todayStr(cur);
+        if(ds.has(key)){ streak++; cur = new Date(cur.getTime() - dayMs); }
+        else break;
+      }
+      return streak;
+    }
+    function refreshStreak(){ streakEl.textContent = calcStreak(); }
+
+    // --- Natural language parsing (heuristics only)
+    const DAY_MS = 86400000;
+    function parseTask(text){
+      let title = text.trim();
+      // priority
+      let priority = 2; // low
+      if(/!!|urgent|asap|today|now/i.test(title)) priority = 0;
+      else if(/!|email|submit|pay|fix|call|meet|report|review|apply/i.test(title)) priority = 1;
+
+      // tags
+      let tags = [];
+      if(/resume|cv|portfolio|github|linkedin/i.test(title)) tags.push('career');
+      if(/interview|hr|recruiter|jd|job/i.test(title)) tags.push('job');
+      if(/college|assignment|project|lab|semester/i.test(title)) tags.push('college');
+      if(/finance|invoice|payment|tax/i.test(title)) tags.push('finance');
+
+      // deadline inference (basic)
+      let deadline = null;
+      const now = new Date();
+      const m = title.match(/\b(by|before|on)\s+([A-Za-z]+|\d{1,2}(?:st|nd|rd|th)?|\d{1,2}\/\d{1,2}(?:\/\d{2,4})?)(?:\s+(\d{1,2}(?::\d{2})?\s*(?:am|pm)?))?/i);
+      if(/tomorrow/i.test(title)) deadline = new Date(now.getTime()+DAY_MS);
+      else if(/today/i.test(title)) deadline = now;
+      else if(m){
+        const token = m[2].toLowerCase();
+        const map = {mon:1,tue:2,wed:3,thu:4,fri:5,sat:6,sun:0,
+                     monday:1,tuesday:2,wednesday:3,thursday:4,friday:5,saturday:6,sunday:0};
+        if(token in map){
+          const target = map[token];
+          let d = new Date(now); 
+          while(d.getDay()!==target){ d = new Date(d.getTime()+DAY_MS); }
+          deadline = d;
+        }else{
+          if(/\d{1,2}\/\d{1,2}(?:\/\d{2,4})?/.test(token)){
+            const parts = token.split('/').map(n=>parseInt(n,10));
+            const [dd,mm,yy] = [parts[0], parts[1], parts[2] || (new Date()).getFullYear()];
+            deadline = new Date(yy, mm-1, dd);
+          }
+        }
+      }
+      return { title, priority, tags, deadline };
+    }
+
+    function formatDeadline(d){
+      if(!d) return '';
+      const dt = new Date(d);
+      return ` (due ${dt.toLocaleDateString()})`;
+    }
+
+    // --- Core ops
+    function addTask(raw){
+      const parsed = parseTask(raw);
+      let title = parsed.title;
+      if(parsed.tags.length) title += parsed.tags.map(t=>' #' + t).join('');
+      if(parsed.deadline) title += formatDeadline(parsed.deadline);
+      // dedupe
+      if(state.items.some(x=>x.title.toLowerCase()===title.toLowerCase())){
+        toast('Skipped duplicate: ' + title);
+        return;
+      }
+      state.items.unshift({ id: uid(), title, done:false, p: parsed.priority });
+      save(); render();
+    }
+    function toggle(id){
+      const t = state.items.find(x=>x.id===id);
+      if(t){ 
+        const was = t.done; t.done = !t.done; save(); render();
+        if(!was && t.done){ addDoneToday(); refreshStreak(); }
+      }
+    }
+    function remove(id){ state.items = state.items.filter(x=>x.id!==id); save(); render(); }
+    function edit(id, newTitle){
+      const t = state.items.find(x=>x.id===id);
+      if(t){ t.title = (newTitle||'').trim() || t.title; save(); render(); }
+    }
+    function clearCompleted(){ state.items = state.items.filter(x=>!x.done); save(); render(); }
+    function setFilter(f){
+      state.filter = f;
+      $$('.toolbar button').forEach(b=> b.classList.toggle('active', b.dataset.filter===f));
+      render();
+    }
+    function filtered(){
+      if(state.filter==='active') return state.items.filter(t=>!t.done);
+      if(state.filter==='done') return state.items.filter(t=>t.done);
+      return state.items;
+    }
+
+    function render(){
+      const items = filtered();
+      listEl.innerHTML = '';
+      if(state.items.length===0){ empty.style.display='block'; } else { empty.style.display='none'; }
+
+      items.forEach(t=>{
+        const li = document.createElement('li');
+        li.className = 'task' + (t.done?' done':'');
+        li.dataset.id = t.id;
+        li.innerHTML = `
+          <input type="checkbox" ${t.done?'checked':''} aria-label="toggle"/>
+          <div class="title"><span class="txt"></span>${t.p!=null?'<span class="tag">p'+t.p+'</span>':''}</div>
+          <div class="right">
+            <button data-act="edit">Edit</button>
+            <button data-act="del">Delete</button>
+          </div>`;
+        li.querySelector('.txt').textContent = t.title;
+        listEl.appendChild(li);
+      });
+      count.textContent = state.items.length;
+      left.textContent = state.items.filter(t=>!t.done).length;
+    }
+
+    function inlineEdit(li, id){
+      const span = li.querySelector('.txt');
+      const old = span.textContent;
+      const box = document.createElement('input');
+      box.type = 'text'; box.value = old; box.style.width = '100%';
+      span.replaceWith(box); box.focus();
+      const commit = ()=> edit(id, box.value);
+      box.addEventListener('keydown', e=>{
+        if(e.key==='Enter') commit();
+        if(e.key==='Escape') edit(id, old);
+      });
+      box.addEventListener('blur', commit);
+    }
+
+    // --- Toast
+    function toast(msg){
+      assistOut.textContent = msg;
+      assistOut.style.color = '#db2777';
+      setTimeout(()=>{ assistOut.textContent=''; }, 2500);
+    }
+
+    // --- Export image
+    function exportSummary(){
+      const w = 1024, h = 512;
+      const c = document.createElement('canvas'); c.width = w; c.height = h;
+      const ctx = c.getContext('2d');
+      const g = ctx.createLinearGradient(0,0,w,h); g.addColorStop(0,'#fff0f6'); g.addColorStop(1,'#ffe6ef');
+      ctx.fillStyle = g; ctx.fillRect(0,0,w,h);
+      ctx.fillStyle = '#ffffff'; ctx.strokeStyle = '#f5c2d3'; ctx.lineWidth = 2;
+      ctx.fillRect(40,40,w-80,h-80); ctx.strokeRect(40,40,w-80,h-80);
+      ctx.fillStyle = '#db2777'; ctx.font = 'bold 36px Segoe UI, Roboto, sans-serif';
+      ctx.fillText('aditi vadmal — to‑do summary', 64, 98);
+      const total = state.items.length, remaining = state.items.filter(t=>!t.done).length, completed = total - remaining;
+      const streak = calcStreak(), date = new Date().toLocaleDateString();
+      ctx.fillStyle = '#7a6167'; ctx.font = '20px Segoe UI, Roboto, sans-serif';
+      ctx.fillText(`date: ${date}`, 64, 138);
+      ctx.fillStyle = '#ec4899'; ctx.font = 'bold 24px Segoe UI, Roboto, sans-serif';
+      ctx.fillText(`completed: ${completed}`, 64, 188); ctx.fillText(`left: ${remaining}`, 260, 188); ctx.fillText(`streak: ${streak} day${streak===1?'':'s'}`, 420, 188);
+      ctx.fillStyle = '#3a2e32'; ctx.font = 'bold 22px Segoe UI, Roboto, sans-serif'; ctx.fillText('top tasks:', 64, 236);
+      ctx.font = '20px Segoe UI, Roboto, sans-serif';
+      const top = state.items.filter(t=>!t.done).slice(0,5);
+      if(top.length===0){ ctx.fillStyle='#7a6167'; ctx.fillText('no pending tasks — on top of everything! 💪', 64, 270); }
+      else top.forEach((t,i)=>{ ctx.fillStyle='#ec4899'; ctx.fillText('•', 64, 270 + i*34); ctx.fillStyle='#3a2e32'; ctx.fillText(t.title.slice(0,60), 84, 270 + i*34); });
+      const url = c.toDataURL('image/png'); const a = document.createElement('a'); a.href = url; a.download = `aditi-vadmal-summary-${Date.now()}.png`; a.click();
+    }
+
+    // --- Helper logic (heuristics only; no external API, no settings)
+    function localSuggest(ctx){
+      const out = [];
+      if(/interview|job|jd|recruiter/i.test(ctx)){ out.push('Tailor resume for target role by tomorrow 5pm !!', 'Write a short LinkedIn post about a recent project', 'Apply to 3 curated roles with personalized notes'); }
+      if(/portfolio|github|project/i.test(ctx)){ out.push('Polish README of flagship project', 'Add demo GIF/screenshot to portfolio', 'Fix one open issue / add tests'); }
+      if(/schedule|today|tomorrow|2–6pm|2-6pm/i.test(ctx)){ out.push('Block calendar for deep work 2–4pm', 'Send follow-up email at 5pm'); }
+      if(out.length===0){ out.push('Break the main goal into 3 small tasks', 'Set a realistic deadline for each task', 'Schedule a 25‑min focus block'); }
+      return out;
+    }
+
+    function localPlan(ctx){
+      const now = new Date();
+      const slots = ['09:30 Focus block (25m)','10:30 Admin: emails (20m)','11:00 Build: key task (50m)','14:00 Build: task 2 (50m)','16:00 Review & wrap‑up (20m)'];
+      return ['Plan for '+ now.toLocaleDateString() +':', ...slots];
+    }
+
+    function localSummary(){
+      const total = state.items.length, remaining = state.items.filter(t=>!t.done).length, completed = total - remaining;
+      return [`Completed: ${completed}`, `Left: ${remaining}`, `Streak: ${calcStreak()} days`];
+    }
+
+    function localMotivation(){
+      const lines = [
+        'Small steps compound — ship one meaningful thing today.',
+        'Momentum beats perfection: start, then iterate.',
+        'Future you will thank you for finishing this hour.',
+      ];
+      return [lines[Math.floor(Math.random()*lines.length)]];
+    }
+
+    function present(lines){
+      assistOut.innerHTML = '<ul style="margin:6px 0 0; padding-left:18px">'+ lines.map(li=>'<li>'+li+'</li>').join('') +'</ul>';
+    }
+
+    function doSuggest(){
+      const ctx = ctxBox.value.trim();
+      const lines = localSuggest(ctx);
+      present(lines);
+      lines.forEach(addTask);
+    }
+    function doPlan(){
+      const ctx = ctxBox.value.trim();
+      const lines = localPlan(ctx);
+      present(lines);
+    }
+    function doSummarize(){
+      const lines = localSummary();
+      present(lines);
+    }
+    function doMotivate(){
+      const lines = localMotivation();
+      present(lines);
+    }
+    function doClean(){
+      const seen = new Set();
+      state.items = state.items.filter(t=>{
+        const key = t.title.toLowerCase().replace(/\s+/g,' ').trim();
+        if(seen.has(key)) return false;
+        seen.add(key); return true;
+      }).sort((a,b)=> (a.p??2)-(b.p??2));
+      save(); render(); toast('List tidied & sorted');
+    }
+
+    // --- Events
+    addBtn.addEventListener('click', ()=> addTask(input.value));
+    input.addEventListener('keydown', e=>{ if(e.key==='Enter') addTask(input.value); });
+    clearBtn.addEventListener('click', clearCompleted);
+    toolbar.addEventListener('click', e=>{ if(e.target.matches('button[data-filter]')) setFilter(e.target.dataset.filter); });
+    listEl.addEventListener('click', e=>{
+      const li = e.target.closest('li.task'); if(!li) return;
+      const id = li.dataset.id;
+      if(e.target.matches('input[type="checkbox"]')) toggle(id);
+      if(e.target.dataset.act==='del') remove(id);
+      if(e.target.dataset.act==='edit') inlineEdit(li, id);
+    });
+    exportLink.addEventListener('click', e=>{
+      e.preventDefault();
+      const blob = new Blob([JSON.stringify(state.items, null, 2)], {type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'aditi-vadmal-todos.json'; a.click();
+      URL.revokeObjectURL(url);
+    });
+    imgExport.addEventListener('click', e=>{ e.preventDefault(); exportSummary(); });
+
+    // boot
+    load(); render(); refreshStreak();
+  </script>
+</body>
+</html>
